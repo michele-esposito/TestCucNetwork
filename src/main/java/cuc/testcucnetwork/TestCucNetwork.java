@@ -377,7 +377,8 @@ public class TestCucNetwork {
     private static List<Row> buildRows() {
         List<TestSpec> specs = new ArrayList<>();
 
-        // MQTT CUC
+        // MQTT CUC--
+        
         specs.add(new TestSpec("MQTT CUC", "10.200.0.216", 8883, "telnet 10.200.0.216 8883"));
 
         // SFTP CUC (Blacklist EMV)
