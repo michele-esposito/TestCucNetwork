@@ -37,6 +37,30 @@ public class TestCucNetwork {
         }
     }
 
+    static class EndpointParser {
+        private EndpointParser() {}
+
+        static TestSpec fromUrl(String group, String endpointUrl) {
+            try {
+                URI uri = URI.create(endpointUrl.trim());
+                String host = uri.getHost();
+                if (host == null || host.isBlank()) {
+                    throw new IllegalArgumentException("Host mancante nell'URL: " + endpointUrl);
+                }
+                int port = uri.getPort() == -1 ? defaultPort(uri.getScheme()) : uri.getPort();
+                return new TestSpec(group, host, port, "telnet " + host + " " + port + " (from " + endpointUrl + ")");
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Endpoint non valido: " + endpointUrl, ex);
+            }
+        }
+
+        private static int defaultPort(String scheme) {
+            if ("https".equalsIgnoreCase(scheme)) return 443;
+            if ("http".equalsIgnoreCase(scheme)) return 80;
+            return 8883;
+        }
+    }
+
     enum Status { PENDING, RUNNING, OK, FAIL, SKIPPED }
 
     static class TestResult {
@@ -68,7 +92,7 @@ public class TestCucNetwork {
             Row r = rows.get(rowIndex);
             return switch (columnIndex) {
                 case 0 -> r.spec.group;
-                case 1 -> "TELNET(TCP)";
+                case 1 -> r.spec.label;
                 case 2 -> r.spec.host;
                 case 3 -> r.spec.port;
                 case 4 -> r.result.status;
@@ -128,6 +152,7 @@ public class TestCucNetwork {
         JTable table = new JTable(tableModel);
         table.setFillsViewportHeight(true);
         table.setRowHeight(22);
+        table.getColumnModel().getColumn(1).setPreferredWidth(330);
 
         JScrollPane tableScroll = new JScrollPane(table);
         tableScroll.setBorder(BorderFactory.createTitledBorder("Elenco test"));
@@ -378,8 +403,9 @@ public class TestCucNetwork {
         List<TestSpec> specs = new ArrayList<>();
 
         // MQTT CUC
-        
         specs.add(new TestSpec("MQTT CUC", "10.200.0.216", 8883, "telnet 10.200.0.216 8883"));
+        specs.add(EndpointParser.fromUrl("MQTT AWS", "https://b-e4e84bee-3405-4a84-90fc-40cca943ccb9-1.mq.us-east-2.amazonaws.com:8883"));
+        specs.add(EndpointParser.fromUrl("MQTT AWS", "http://b-e4e84bee-3405-4a84-90fc-40cca943ccb9-2.mq.us-east-2.amazonaws.com:8883"));
 
         // SFTP CUC (Blacklist EMV)
         specs.add(new TestSpec("SFTP CUC (Blacklist EMV)", "10.200.0.10", 22, "telnet 10.200.0.10 22"));
